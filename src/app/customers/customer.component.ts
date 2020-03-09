@@ -6,6 +6,20 @@ import { Customer } from './customer';
 /* AbstractControl can only have one set of parameters, so a validator function with
 additional parameters needs to be returned from a factory function */
 
+function emailMatcher(c: AbstractControl): { [key: string ]: boolean } | null {
+  const emailControl = c.get('email');
+  const confirmControl = c.get('confirmEmail');
+
+  if (emailControl.pristine || confirmControl.pristine) {
+    return null;
+  }
+
+  if (emailControl.value === confirmControl.value) {
+    return null;
+  }
+  return { match: true};
+}
+
 function ratingRange(min: number, max: number): ValidatorFn {
   return (c: AbstractControl): { [key: string]: boolean } | null => {
     if (c.value !== null && (isNaN(c.value) || c.value < min || c.value > max)) {
@@ -34,8 +48,11 @@ export class CustomerComponent implements OnInit {
         [Validators.required, Validators.minLength(3)]],
       lastName: ['',
         [Validators.required, Validators.maxLength(50)]],
-      email: ['',
-        [Validators.required, Validators.email]],
+        emailGroup: this.fb.group({
+          email: ['',
+            [Validators.required, Validators.email]],
+          confirmEmail: ['', Validators.required],
+        }, {validator: emailMatcher}),
       phone: '',
       notification: 'email',
       rating: [null, ratingRange(1, 5)],
